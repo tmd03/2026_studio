@@ -1,0 +1,2020 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMS Interface</title>
+<style>
+/* ══════════════════════════════════════════════════════════
+   PLEOS CONNECT — Light Mode Design System
+   Ref: document.pleos.ai/docs/connect/guide/docs-design
+══════════════════════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0;
+    font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+html, body {
+  width: 100%; height: 100%;
+  background: #e8eaed;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── 외부 프레임 (차량 디스플레이 베젤) ── */
+.screen {
+  width: 100%; max-width: 980px; aspect-ratio: 16/9;
+  background: #F7F8FA;
+  border-radius: 20px; overflow: hidden;
+  position: relative; display: flex; flex-direction: column;
+  min-height: 480px;
+  box-shadow:
+    0 0 0 3px #1a1a1a,
+    0 0 0 5px #2e2e2e,
+    0 20px 60px rgba(0,0,0,0.4);
+}
+
+/* ══════════════════════
+   ① 부팅 화면
+══════════════════════ */
+#screen-boot {
+  position: absolute; inset: 0; z-index: 40;
+  background: #F7F8FA;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px;
+  transition: opacity 0.6s;
+}
+#screen-boot.out { opacity: 0; pointer-events: none; }
+.boot-ring {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 1.5px solid #e0e2e6;
+  display: flex; align-items: center; justify-content: center;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.boot-ring svg { width: 28px; height: 28px; color: #1259C3; }
+.boot-title { font-size: 16px; color: #111; font-weight: 600; letter-spacing: 0.12em; }
+.boot-sub { font-size: 10px; color: #999; letter-spacing: 0.1em; }
+.boot-prog {
+  width: 160px; height: 2px; background: #e8eaed; border-radius: 2px; overflow: hidden;
+}
+.boot-prog-bar { height: 100%; width: 0; background: #1259C3; transition: width 2.3s cubic-bezier(0.4,0,0.2,1); }
+
+/* ══════════════════════
+   ② 프로필 선택
+══════════════════════ */
+#screen-profile {
+  position: absolute; inset: 0; z-index: 30;
+  background: #F7F8FA;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.5s;
+}
+#screen-profile.show { display: flex; }
+#screen-profile.in { opacity: 1; }
+.ph { text-align: center; margin-bottom: 24px; }
+.ph h2 { font-size: 18px; color: #111; font-weight: 600; margin-bottom: 4px; }
+.ph p { font-size: 11px; color: #888; }
+.p-cards { display: flex; gap: 12px; padding: 0 20px; }
+.pc {
+  width: 120px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; padding: 16px 10px 12px; border-radius: 14px;
+  border: 1.5px solid #e8eaed; background: white;
+  transition: all 0.18s; position: relative;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+.pc:hover { border-color: #1259C3; box-shadow: 0 4px 16px rgba(18,89,195,0.12); transform: translateY(-2px); }
+.pc.sel { border-color: #1259C3; background: #f0f5ff; box-shadow: 0 4px 16px rgba(18,89,195,0.15); transform: translateY(-2px); }
+.pc.add-c { border-style: dashed; opacity: 0.4; }
+.pc.add-c:hover { opacity: 0.7; }
+.p-chk {
+  position: absolute; top: 7px; right: 7px; width: 16px; height: 16px;
+  border-radius: 50%; background: #1259C3; display: none;
+  align-items: center; justify-content: center;
+}
+.p-chk svg { width: 8px; height: 8px; color: white; }
+.pc.sel .p-chk { display: flex; }
+.p-av {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 600;
+  border: 1.5px solid rgba(0,0,0,0.06);
+}
+.p-nm { font-size: 12px; color: #222; font-weight: 600; text-align: center; }
+.p-tags { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+.p-tag {
+  font-size: 9px; padding: 2px 6px; border-radius: 8px;
+  background: #eef2ff; color: #1259C3;
+}
+.p-last { font-size: 9px; color: #aaa; }
+.p-actions { margin-top: 22px; display: flex; gap: 10px; align-items: center; }
+.btn-go {
+  padding: 9px 26px; border-radius: 100px; background: #1259C3; border: none;
+  color: white; font-size: 12px; font-weight: 600; cursor: pointer;
+  opacity: 0.3; pointer-events: none; transition: all 0.13s;
+}
+.btn-go.on { opacity: 1; pointer-events: all; }
+.btn-go.on:hover { background: #0d46a1; }
+.btn-guest {
+  padding: 9px 18px; border-radius: 100px;
+  background: transparent; border: 1.5px solid #d0d4dc;
+  color: #666; font-size: 11px; cursor: pointer; transition: all 0.13s;
+}
+.btn-guest:hover { border-color: #999; color: #333; }
+
+/* ══════════════════════
+   ③ 메인 화면
+══════════════════════ */
+#screen-main { display: none; flex-direction: column; flex: 1; opacity: 0; transition: opacity 0.5s; }
+#screen-main.show { display: flex; }
+#screen-main.in { opacity: 1; }
+
+/* ── Status Bar (Pleos 상단 바) ── */
+.statusbar {
+  height: 36px; background: white; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid #EBEBEB;
+  z-index: 10;
+}
+.sb-l { display: flex; align-items: center; gap: 8px; }
+.sb-num { font-size: 16px; font-weight: 700; color: #111; letter-spacing: -0.5px; }
+.sb-dms { font-size: 9px; color: #bbb; letter-spacing: 0.1em; text-transform: uppercase; }
+.sb-r { display: flex; align-items: center; gap: 10px; font-size: 10px; color: #888; }
+.prof-badge {
+  display: flex; align-items: center; gap: 4px;
+  background: #f0f5ff; border-radius: 100px;
+  padding: 3px 10px; font-size: 11px; color: #1259C3; font-weight: 500;
+  cursor: pointer; border: 1px solid #d0e0ff;
+}
+.prof-badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+.sb-time { font-size: 12px; color: #111; font-weight: 600; }
+.sb-icons { display: flex; gap: 6px; align-items: center; }
+.sb-icons svg { width: 14px; height: 14px; color: #666; }
+
+/* ── Body ── */
+.main-body { display: flex; flex: 1; overflow: hidden; }
+
+/* ── Driving View (좌측 고정 영역) ── */
+.driving-view {
+  width: 200px; flex-shrink: 0; background: #F0F2F5;
+  border-right: 1px solid #EBEBEB;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 6px; padding: 12px;
+  position: relative;
+}
+.dv-label { font-size: 9px; color: #bbb; letter-spacing: 0.08em; text-transform: uppercase; }
+.dv-car {
+  opacity: 0.3;
+}
+.dv-car svg { width: 80px; height: 50px; color: #555; }
+.dv-status {
+  position: absolute; bottom: 14px; left: 0; right: 0;
+  display: flex; justify-content: center;
+}
+.dv-badge {
+  background: white; border-radius: 100px; padding: 3px 10px;
+  font-size: 9px; color: #1259C3; font-weight: 500;
+  border: 1px solid #d0e0ff;
+  display: flex; align-items: center; gap: 4px;
+}
+.dv-dot { width: 5px; height: 5px; border-radius: 50%; background: #1259C3;
+  animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+/* ── 앱 영역 (우측 2/3) ── */
+.app-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 홈 패널 */
+#panel-home { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+/* 맵 배경 */
+.map-bg {
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, #dce8f8 0%, #e8f0fe 50%, #dce8f8 100%);
+}
+.map-bg::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(18,89,195,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18,89,195,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.map-blocks { position: absolute; inset: 0; overflow: hidden; opacity: 0.4; }
+.blk {
+  position: absolute; background: #b8cde8; border: 0.5px solid #a0b8d8; border-radius: 2px;
+}
+
+/* 내비 오버레이 */
+.nav-ov {
+  position: absolute; top: 10px; right: 10px; z-index: 5;
+  background: white; border-radius: 12px; padding: 10px 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 150px;
+  border: 1px solid #f0f0f0;
+}
+.nav-dest { font-size: 10px; color: #888; margin-bottom: 2px; }
+.nav-main { font-size: 13px; color: #111; font-weight: 600; }
+.nav-badges { display: flex; gap: 5px; margin-top: 6px; }
+.nav-badge {
+  background: #EEF2FF; border-radius: 100px; padding: 2px 8px;
+  font-size: 10px; color: #1259C3; font-weight: 600;
+}
+
+/* 위젯 컬럼 */
+.widget-col {
+  width: 280px; flex-shrink: 0; z-index: 4;
+  display: flex; flex-direction: column;
+  background: rgba(247,248,250,0.96);
+  border-right: 1px solid #EBEBEB;
+  backdrop-filter: blur(8px);
+}
+.media-topbar {
+  height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; padding: 0 12px; gap: 2px;
+  border-bottom: 1px solid #EBEBEB; background: white;
+}
+.mtb-btn {
+  width: 26px; height: 26px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #888; background: transparent; border: none; transition: all 0.12s;
+}
+.mtb-btn:hover { background: #f0f2f5; color: #333; }
+.mtb-btn svg { width: 12px; height: 12px; }
+.mtb-title { flex: 1; text-align: center; font-size: 10px; color: #888; }
+.mtb-dots { display: flex; gap: 4px; align-items: center; }
+.mtb-dot { width: 4px; height: 4px; border-radius: 50%; background: #ddd; cursor: pointer; transition: background 0.12s; }
+.mtb-dot.on { background: #1259C3; }
+
+.widget-scroll {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  scroll-behavior: smooth; padding: 8px 8px 8px;
+  scrollbar-width: none; cursor: grab; user-select: none;
+}
+.widget-scroll:active { cursor: grabbing; }
+.widget-scroll::-webkit-scrollbar { display: none; }
+
+/* 위젯 카드 */
+.wcard {
+  background: white; border-radius: 12px;
+  border: 1px solid #EBEBEB;
+  overflow: hidden; margin-bottom: 7px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+.wcard:last-child { margin-bottom: 0; }
+.wcard-hdr {
+  display: flex; align-items: center; gap: 5px; padding: 7px 12px 5px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.wcard-hdr-ic { color: #1259C3; }
+.wcard-hdr-ic svg { width: 11px; height: 11px; }
+.wcard-hdr-title { font-size: 10px; color: #888; letter-spacing: 0.04em; font-weight: 500; }
+
+/* 내비 검색 */
+.nav-search-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin: 6px 10px 8px; padding: 8px 12px;
+  background: #F7F8FA; border-radius: 8px;
+  border: 1px solid #EBEBEB; cursor: pointer; transition: all 0.13s;
+}
+.nav-search-bar:hover { background: #eef2ff; border-color: #c0d0f0; }
+.nav-search-bar svg { width: 12px; height: 12px; color: #1259C3; }
+.nav-search-bar span { font-size: 12px; color: #888; }
+.nav-quick-btns { display: flex; gap: 5px; padding: 0 10px 10px; }
+.nav-qb {
+  flex: 1; padding: 7px 4px; border-radius: 8px; cursor: pointer;
+  background: #F7F8FA; border: 1px solid #EBEBEB;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.13s;
+}
+.nav-qb:hover { background: #eef2ff; border-color: #c0d0f0; }
+.nav-qb svg { width: 14px; height: 14px; color: #1259C3; }
+.nav-qb span { font-size: 9px; color: #666; }
+
+/* 단축키 */
+.shortcut-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 6px 10px 10px; }
+.sc-key {
+  padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  background: #F7F8FA; border: 1px solid #EBEBEB;
+  display: flex; align-items: center; gap: 6px; transition: all 0.13s;
+}
+.sc-key:hover { background: #eef2ff; border-color: #c0d0f0; }
+.sc-key.empty { border-style: dashed; justify-content: center; }
+.sc-num { font-size: 9px; color: #bbb; min-width: 10px; }
+.sc-label { font-size: 11px; color: #333; font-weight: 500; }
+.sc-add { font-size: 16px; color: #ccc; }
+.sc-key-btn {
+  grid-column: 1 / -1; padding: 7px; background: #eef2ff;
+  border: 1px solid #c0d0f0; border-radius: 8px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; transition: all 0.13s;
+}
+.sc-key-btn:hover { background: #ddeaff; }
+.sc-key-btn svg { width: 12px; height: 12px; color: #1259C3; }
+.sc-key-btn span { font-size: 11px; color: #1259C3; font-weight: 500; }
+
+/* 블루투스 */
+.bt-widget { display: flex; align-items: center; gap: 10px; padding: 8px 12px 11px; }
+.bt-phone-ico {
+  width: 34px; height: 44px; border-radius: 6px;
+  background: #F7F8FA; border: 1px solid #EBEBEB;
+  display: flex; align-items: center; justify-content: center;
+}
+.bt-phone-ico svg { width: 14px; height: 14px; color: #aaa; }
+.bt-info { flex: 1; }
+.bt-status { font-size: 10px; color: #888; margin-bottom: 6px; }
+.bt-btn {
+  display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+  background: #1259C3; border-radius: 100px; cursor: pointer;
+  border: none; transition: all 0.13s; width: fit-content;
+}
+.bt-btn:hover { background: #0d46a1; }
+.bt-btn svg { width: 12px; height: 12px; color: white; }
+.bt-btn span { font-size: 11px; color: white; font-weight: 500; }
+
+/* 날씨 */
+.weather-widget { padding: 8px 12px 12px; position: relative; }
+.ww-loc { display: flex; align-items: center; gap: 4px; margin-bottom: 6px; }
+.ww-loc svg { width: 10px; height: 10px; color: #f5a623; }
+.ww-loc span { font-size: 10px; color: #f5a623; font-weight: 500; }
+.ww-main { display: flex; align-items: flex-end; gap: 8px; }
+.ww-temp { font-size: 30px; color: #111; font-weight: 300; line-height: 1; display: flex; align-items: flex-start; }
+.ww-deg { font-size: 13px; color: #888; margin-top: 3px; }
+.ww-icon { font-size: 22px; }
+.ww-detail { flex: 1; display: flex; flex-direction: column; gap: 3px; padding-bottom: 2px; }
+.ww-row { display: flex; align-items: center; gap: 5px; }
+.ww-row svg { width: 9px; height: 9px; color: #888; }
+.ww-row span { font-size: 10px; color: #666; }
+.ww-aqi { display: inline-flex; align-items: center; gap: 4px; margin-top: 3px; }
+.ww-aqi-bar { width: 28px; height: 4px; border-radius: 3px; background: linear-gradient(90deg, #1259C3, #4CAF50); }
+.ww-aqi span { font-size: 9px; color: #4CAF50; font-weight: 500; }
+
+/* 음악 */
+.music-widget { display: flex; align-items: center; gap: 10px; padding: 6px 12px 10px; }
+.music-art {
+  width: 34px; height: 34px; border-radius: 6px; flex-shrink: 0;
+  background: linear-gradient(135deg, #1259C3, #4080e8);
+  display: flex; align-items: center; justify-content: center;
+}
+.music-art svg { width: 14px; height: 14px; color: white; }
+.music-info { flex: 1; min-width: 0; }
+.music-source { font-size: 9px; color: #aaa; margin-bottom: 2px; display: flex; align-items: center; gap: 3px; }
+.music-source-dot { width: 5px; height: 5px; border-radius: 50%; background: #1db954; }
+.music-title { font-size: 12px; color: #111; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music-artist { font-size: 10px; color: #888; }
+.music-controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.mc-btn {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; background: transparent; border: none; color: #aaa; transition: all 0.13s;
+}
+.mc-btn:hover { color: #1259C3; background: #eef2ff; }
+.mc-btn.play { background: #1259C3; color: white; }
+.mc-btn svg { width: 10px; height: 10px; }
+
+.scroll-hint { position: absolute; bottom: 48px; left: 5px; width: 270px; display: flex; justify-content: center; gap: 3px; pointer-events: none; }
+.sh-dot { width: 3px; height: 3px; border-radius: 50%; background: #ddd; transition: background 0.2s; }
+.sh-dot.on { background: #1259C3; }
+
+/* ══════════════════════
+   설정 패널
+══════════════════════ */
+#panel-settings { display: none; flex: 1; overflow: hidden; background: #F7F8FA; }
+#panel-settings.show { display: flex; }
+
+.menu-col {
+  width: 200px; flex-shrink: 0; background: white;
+  border-right: 1px solid #EBEBEB;
+  display: flex; flex-direction: column; overflow-y: auto;
+  cursor: grab; user-select: none; overscroll-behavior: contain;
+  scrollbar-width: thin; min-height: 0;
+}
+.menu-col:active { cursor: grabbing; }
+.menu-col::-webkit-scrollbar { width: 6px; }
+.menu-col::-webkit-scrollbar-thumb { background: #d0d4dc; border-radius: 6px; }
+.menu-col::-webkit-scrollbar-track { background: transparent; }
+.menu-back {
+  display: flex; align-items: center; gap: 7px;
+  padding: 11px 14px 9px; cursor: pointer; color: #1259C3; font-size: 12px; font-weight: 500;
+  border-bottom: 1px solid #EBEBEB; transition: color 0.12s;
+}
+.menu-back:hover { color: #0d46a1; }
+.menu-back svg { width: 12px; height: 12px; }
+.menu-hdr { padding: 10px 14px 6px; font-size: 9px; color: #bbb; letter-spacing: 0.1em; text-transform: uppercase; }
+.mi {
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 14px; cursor: pointer; color: #555; font-size: 12px;
+  border-left: 3px solid transparent; transition: all 0.12s;
+}
+.mi:hover { color: #111; background: #F7F8FA; }
+.mi.on { color: #1259C3; background: #eef2ff; border-left-color: #1259C3; font-weight: 500; }
+.mi.on-parent { color: #333; background: #fafafa; border-left-color: #d0d4dc; }
+.mi svg { width: 14px; height: 14px; flex-shrink: 0; }
+.mi-arrow { margin-left: auto; opacity: 0.4; }
+.mi-arrow svg { width: 10px; height: 10px; }
+.mi-divider { height: 1px; background: #f0f0f0; margin: 3px 14px; }
+.sub-menu { background: #fafafa; border-left: 3px solid #e8eaed; overflow: visible; max-height: 0; transition: max-height 0.25s ease; }
+.sub-menu.open { max-height: 500px; }
+.smi {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 14px 9px 22px; cursor: pointer;
+  color: #666; font-size: 11px; transition: all 0.12s;
+}
+.smi:hover { color: #111; background: #F7F8FA; }
+.smi.on { color: #1259C3; background: #eef2ff; font-weight: 500; }
+.smi svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* 우측 디테일 */
+.detail-col {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+  background: #F7F8FA;
+}
+.detail-header {
+  display: flex; align-items: center;
+  border-bottom: 1px solid #EBEBEB; padding: 0 16px; height: 38px; background: white;
+}
+.detail-tab {
+  font-size: 11px; color: #aaa; padding: 0 12px; height: 100%;
+  display: flex; align-items: center; cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.12s; font-weight: 500;
+}
+.detail-tab:hover { color: #555; }
+.detail-tab.on { color: #1259C3; border-bottom-color: #1259C3; }
+
+/* 차량 시각화 */
+.car-viz {
+  flex: 1; position: relative;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(180deg, #F7F8FA 0%, #eef0f3 100%);
+}
+.car-svg-wrap { opacity: 0.5; transform: perspective(400px) rotateY(-8deg); }
+.car-svg-wrap svg { width: 160px; height: 100px; color: #1259C3; }
+.ctrl-overlay {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px;
+}
+.ctrl-group { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid #e0e4ec; background: white; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.ctrl-btn {
+  padding: 7px 14px; font-size: 11px; cursor: pointer; color: #555;
+  background: transparent; border: none; transition: all 0.12s; font-weight: 500;
+}
+.ctrl-btn:hover { background: #F7F8FA; color: #111; }
+.ctrl-btn.on { background: #eef2ff; color: #1259C3; }
+.ctrl-btn + .ctrl-btn { border-left: 1px solid #e0e4ec; }
+
+/* 경고 설정 폼 */
+.warning-settings-page {
+  padding: 16px; display: flex; flex-direction: column; gap: 14px; flex: 1;
+}
+.warning-settings-page .detail-title {
+  font-size: 14px; color: #111; font-weight: 600;
+  padding-bottom: 12px; border-bottom: 1px solid #EBEBEB;
+  display: flex; align-items: center; gap: 8px;
+}
+.warning-settings-page .detail-title svg { width: 16px; height: 16px; color: #1259C3; }
+.warning-settings-page .setting-group { display: flex; flex-direction: column; gap: 6px; }
+.warning-settings-page .setting-label { font-size: 10px; color: #888; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 500; }
+.warning-settings-page .setting-row { display: flex; gap: 6px; }
+.warning-settings-page .opt-btn {
+  flex: 1; padding: 8px 6px; border-radius: 8px; cursor: pointer;
+  background: white; border: 1.5px solid #e0e4ec;
+  color: #555; font-size: 12px; text-align: center; font-weight: 500; transition: all 0.14s;
+}
+.warning-settings-page .opt-btn:hover { border-color: #1259C3; color: #1259C3; background: #eef2ff; }
+.warning-settings-page .opt-btn.selected { background: #eef2ff; color: #1259C3; border-color: #1259C3; }
+.warning-settings-page .slider-wrap { display: flex; align-items: center; gap: 10px; }
+.warning-settings-page .slider-wrap input[type=range] { flex: 1; height: 4px; accent-color: #1259C3; cursor: pointer; }
+.warning-settings-page .slider-val { font-size: 12px; color: #111; min-width: 28px; text-align: right; font-weight: 600; }
+.warning-settings-page .range-end { font-size: 10px; color: #aaa; }
+.warning-settings-page .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+.warning-settings-page .toggle-row:last-of-type { border-bottom: none; }
+.warning-settings-page .toggle-label { font-size: 13px; color: #333; font-weight: 400; }
+.warning-settings-page .toggle {
+  width: 38px; height: 22px; border-radius: 11px;
+  background: #ddd; cursor: pointer; position: relative;
+  transition: background 0.2s; flex-shrink: 0; border: none;
+}
+.warning-settings-page .toggle.on { background: #1259C3; }
+.warning-settings-page .toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%; background: white;
+  transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.warning-settings-page .toggle.on::after { transform: translateX(16px); }
+.warning-settings-page .save-btn {
+  margin-top: auto; padding: 10px; border-radius: 100px;
+  background: #1259C3; border: none; color: white;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.13s;
+}
+.warning-settings-page .save-btn:hover { background: #0d46a1; }
+
+/* 새 공통 opt-btn (.ob) — 보이스/설정 */
+.sg { display: flex; flex-direction: column; gap: 5px; }
+.sl { font-size: 10px; color: #888; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 500; }
+.sr { display: flex; gap: 5px; }
+.ob {
+  flex: 1; padding: 7px 4px; border-radius: 8px; cursor: pointer; text-align: center;
+  background: white; border: 1.5px solid #e0e4ec; color: #555; font-size: 11px;
+  font-weight: 500; transition: all 0.12s;
+}
+.ob:hover { border-color: #1259C3; color: #1259C3; background: #eef2ff; }
+.ob.on { background: #eef2ff; color: #1259C3; border-color: #1259C3; }
+.sw-row, .toggle-row {
+  display: flex; align-items: center; justify-content: space-between; padding: 7px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+.sw-row:last-child, .toggle-row:last-child { border-bottom: none; }
+.sw-label, .toggle-label { font-size: 12px; color: #333; }
+.sw {
+  width: 36px; height: 20px; border-radius: 10px; background: #ddd; cursor: pointer;
+  position: relative; transition: background 0.17s; flex-shrink: 0; border: none;
+}
+.sw.on { background: #1259C3; }
+.sw::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 16px; height: 16px; border-radius: 50%; background: white;
+  transition: transform 0.17s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.sw.on::after { transform: translateX(16px); }
+.slw { display: flex; align-items: center; gap: 8px; }
+.slw input[type=range] { flex: 1; height: 4px; accent-color: #1259C3; cursor: pointer; }
+.slv { font-size: 12px; color: #111; min-width: 32px; text-align: right; font-weight: 600; }
+.slc { font-size: 10px; color: #aaa; }
+.save-btn {
+  margin-top: auto; padding: 9px; border-radius: 100px;
+  background: #1259C3; border: none; color: white;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.13s;
+}
+.save-btn:hover { background: #0d46a1; }
+
+/* ══════════════════════
+   GNB 하단 바 — Pleos Figma 스펙 기반
+══════════════════════ */
+.gnb {
+  height: 124px; background: #F7F8FA; flex-shrink: 0;
+  border-top: 1px solid rgba(19,20,23,0.1);
+  display: flex; align-items: center;
+  padding: 0 60px; justify-content: space-between;
+  gap: 0;
+}
+
+/* ── 공조 버튼 공통 ── */
+.gnb-ctrl {
+  width: 100px; height: 100px; border-radius: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.14s;
+  background: transparent;
+}
+.gnb-ctrl:hover { background: rgba(19,20,23,0.06); }
+.gnb-ctrl:active { background: rgba(19,20,23,0.1); }
+.gnb-ctrl svg { width: 44px; height: 44px; color: #131417; }
+
+/* ── 온도 컨트롤 그룹 ── */
+.gnb-temp-group { display: flex; align-items: center; }
+.gnb-temp-btn {
+  width: 80px; height: 100px; border-radius: 28px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background 0.14s; background: transparent; border: none;
+}
+.gnb-temp-btn:hover { background: rgba(19,20,23,0.06); }
+.gnb-temp-btn svg { width: 24px; height: 43px; color: #131417; }
+
+.gnb-temp-display {
+  width: 164px; height: 100px; border-radius: 28px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  cursor: pointer; transition: background 0.14s; background: transparent;
+}
+.gnb-temp-display:hover { background: rgba(19,20,23,0.04); }
+.gnb-temp-num {
+  display: flex; align-items: flex-start; gap: 0;
+}
+.gnb-temp-big {
+  font-size: 44px; font-weight: 700; color: #131417; line-height: 1;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+.gnb-temp-dec {
+  font-size: 32px; font-weight: 700; color: #131417; line-height: 1;
+  padding-top: 10px;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+}
+.gnb-temp-label {
+  font-size: 20px; font-weight: 700; color: rgba(19,20,23,0.84); line-height: 1;
+  font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  display: flex; align-items: center; gap: 4px;
+}
+.gnb-temp-label svg { width: 22px; height: 22px; color: #131417; }
+
+/* ── 좌우 공조 영역 ── */
+.gnb-left { flex: 1; display: flex; align-items: center; gap: 8px; }
+.gnb-right { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+
+/* ── 중앙 앱 영역 ── */
+.gnb-center {
+  display: flex; align-items: center; gap: 12px;
+}
+.gnb-apps-group {
+  display: flex; align-items: center; gap: 4px;
+}
+.gnb-divider {
+  width: 2px; height: 40px;
+  background: rgba(19,20,23,0.2);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* ── 앱 아이콘 버튼 ── */
+.gnb-app-btn {
+  width: 124px; height: 124px; min-width: 124px; min-height: 124px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; border-radius: 28px;
+  transition: background 0.14s; background: transparent;
+  flex-direction: column; gap: 6px;
+}
+.gnb-app-btn:hover { background: rgba(19,20,23,0.05); }
+.gnb-app-icon {
+  width: 84px; height: 84px; border-radius: 24px;
+  overflow: hidden; position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.16), 0 2px 2px rgba(0,0,0,0.08);
+  outline: 1px solid rgba(19,20,23,0.1); outline-offset: -1px;
+  flex-shrink: 0;
+}
+.gnb-app-icon svg { width: 42px; height: 42px; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); }
+.gnb-app-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(19,20,23,0.64);
+  position: absolute; bottom: 8px;
+}
+
+/* ── 라이브러리 버튼 (앱 아이콘 없는 타입) ── */
+.gnb-lib-btn {
+  width: 124px; height: 124px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 28px; transition: background 0.14s; background: transparent;
+}
+.gnb-lib-btn:hover { background: rgba(19,20,23,0.05); }
+.gnb-lib-btn svg { width: 54px; height: 54px; color: #131417; }
+
+/* 토스트 */
+.toast {
+  position: absolute; bottom: 134px; left: 50%; transform: translateX(-50%);
+  background: #111; color: white;
+  padding: 8px 18px; border-radius: 100px; font-size: 12px; font-weight: 500;
+  opacity: 0; transition: opacity 0.25s; pointer-events: none; white-space: nowrap; z-index: 50;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.toast.show { opacity: 1; }
+
+#alert-popup.show { opacity:1; transform:translateY(0); }
+
+/* 사이드바 — Pleos 미사용 (Driving View로 대체됨) */
+.sidebar { display: none; }
+
+/* === FIX: preview에서 하단 GNB가 잘리지 않도록 크기/레이아웃 보정 === */
+#screen-main { height: 100%; min-height: 0; }
+.main-body { min-height: 0; }
+.app-area { min-height: 0; }
+.gnb { height: 60px; padding: 0 20px; z-index: 20; }
+.gnb-ctrl { width: 40px; height: 48px; border-radius: 14px; }
+.gnb-ctrl svg { width: 22px; height: 22px; }
+.gnb-temp-btn { width: 26px; height: 48px; border-radius: 14px; }
+.gnb-temp-btn svg { width: 14px; height: 22px; }
+.gnb-temp-display { width: 66px; height: 48px; border-radius: 14px; }
+.gnb-temp-big { font-size: 20px; }
+.gnb-temp-dec { font-size: 14px; padding-top: 4px; }
+.gnb-temp-label { font-size: 9px; }
+.gnb-temp-label svg { width: 11px; height: 11px; }
+.gnb-app-btn, .gnb-lib-btn { width: 46px; height: 48px; min-width: 46px; min-height: 48px; border-radius: 14px; }
+.gnb-app-icon { width: 34px; height: 34px; border-radius: 10px; }
+.gnb-app-icon svg { width: 18px; height: 18px; }
+.gnb-lib-btn svg { width: 24px; height: 24px; }
+.gnb-app-dot { width: 4px; height: 4px; bottom: 3px; }
+.gnb-divider { width: 1px; height: 26px; }
+.gnb-center { gap: 5px; }
+.gnb-apps-group { gap: 2px; }
+.gnb-left, .gnb-right { gap: 2px; }
+
+</style>
+
+
+
+</head>
+<body>
+<div class="screen">
+
+<!-- ① 부팅 -->
+<div id="screen-boot">
+  <div class="boot-ring">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+  </div>
+  <div class="boot-title">2026-1 studio</div>
+  <div class="boot-sub">Hello World! :3</div>
+  <div class="boot-prog"><div class="boot-prog-bar" id="bbar"></div></div>
+</div>
+
+<!-- ② 프로필 선택 -->
+<div id="screen-profile">
+  <div class="ph">
+    <h2>운전자를 선택하세요</h2>
+    <p>선택한 프로필의 경고 설정이 적용됩니다</p>
+  </div>
+  <div class="p-cards">
+    <div class="pc" onclick="pickP(this,'김승우','#3d8eff')">
+      <div class="p-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <div class="p-av" style="background:#EEF2FF;border-color:#c0d0ff;"><span style="color:#1259C3;">김</span></div>
+      <div class="p-nm">김승우</div>
+      <div class="p-tags"><div class="p-tag">30대 · 일반형</div><div class="p-tag">중간 말투</div></div>
+      <div class="p-last">최근: 오늘</div>
+    </div>
+    <div class="pc" onclick="pickP(this,'이지은','#c84ec8')">
+      <div class="p-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <div class="p-av" style="background:#fce4fc;border-color:#e0b0ff;"><span style="color:#9c27b0;">이</span></div>
+      <div class="p-nm">이지은</div>
+      <div class="p-tags"><div class="p-tag" style="background:#f3e5f5;color:#7b1fa2;">20대 · 안전형</div><div class="p-tag" style="background:#f3e5f5;color:#7b1fa2;">부드러운 말투</div></div>
+      <div class="p-last">최근: 어제</div>
+    </div>
+    <div class="pc" onclick="pickP(this,'박민준','#f5b030')">
+      <div class="p-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <div class="p-av" style="background:#fff8e1;border-color:#ffe082;"><span style="color:#f5a623;">박</span></div>
+      <div class="p-nm">박민준</div>
+      <div class="p-tags"><div class="p-tag" style="background:#fff8e1;color:#e65100;">40대 · 공격형</div><div class="p-tag" style="background:#fff8e1;color:#e65100;">단호 말투</div></div>
+      <div class="p-last">최근: 3일 전</div>
+    </div>
+    <div class="pc" onclick="pickP(this,'최서연','#4dc87a')">
+      <div class="p-chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <div class="p-av" style="background:#e8f5e9;border-color:#a5d6a7;"><span style="color:#2e7d32;">최</span></div>
+      <div class="p-nm">최서연</div>
+      <div class="p-tags"><div class="p-tag" style="background:#e8f5e9;color:#1b5e20;">50대 · 안전형</div><div class="p-tag" style="background:#e8f5e9;color:#1b5e20;">장문 말투</div></div>
+      <div class="p-last">최근: 1주 전</div>
+    </div>
+    <div class="pc add-c">
+      <div class="p-av" style="background:transparent;border-color:rgba(255,255,255,0.06);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.8" style="width:18px;height:18px;"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <div class="p-nm" style="color:#ccc;">추가</div>
+    </div>
+  </div>
+  <div class="p-actions">
+    <button class="btn-go" id="btn-go" onclick="goMain()">시작하기</button>
+    <button class="btn-guest" onclick="goGuest()">게스트로 시작</button>
+  </div>
+</div>
+
+<!-- ③ 메인 -->
+<div id="screen-main">
+  <!-- 상태바 (Pleos Style) -->
+  <div class="statusbar">
+    <div class="sb-l">
+      <span class="sb-num">42</span>
+      <span class="sb-dms">DMS Active</span>
+    </div>
+    <div class="sb-r">
+      <div class="sb-icons">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
+      </div>
+      <div class="prof-badge" onclick="backToProfile()">
+        <div class="prof-badge-dot" id="pb-dot" style="background:#1259C3;"></div>
+        <span id="pb-name">김승우</span>
+      </div>
+      <span class="sb-time" id="clock">--:--</span>
+    </div>
+  </div>
+
+  <!-- 바디 -->
+  <div class="main-body">
+    <!-- Driving View (Pleos 좌측 고정 영역) -->
+    <div class="driving-view">
+      <span class="dv-label">Driving View</span>
+      <div class="dv-car">
+        <svg viewBox="0 0 200 100" fill="none" stroke="currentColor" stroke-width="1.5" color="#1259C3">
+          <path d="M30 65 Q28 55 35 45 L55 30 Q70 22 100 20 Q130 22 145 30 L165 45 Q172 55 170 65 L170 72 Q150 75 100 75 Q50 75 30 72 Z" stroke="#1259C3" fill="rgba(18,89,195,0.06)"/>
+          <path d="M55 45 Q70 28 100 25 Q130 28 145 45" stroke="#4080e8" stroke-width="0.8" fill="none"/>
+          <path d="M55 45 L65 30 Q80 22 100 21 Q120 22 135 30 L145 45" fill="rgba(18,89,195,0.08)" stroke="#1259C3" stroke-width="0.6"/>
+          <circle cx="58" cy="72" r="11" stroke="#1259C3" fill="rgba(18,89,195,0.08)"/>
+          <circle cx="58" cy="72" r="5" stroke="#4080e8" fill="rgba(18,89,195,0.12)"/>
+          <circle cx="142" cy="72" r="11" stroke="#1259C3" fill="rgba(18,89,195,0.08)"/>
+          <circle cx="142" cy="72" r="5" stroke="#4080e8" fill="rgba(18,89,195,0.12)"/>
+          <path d="M35 52 L48 48 L50 55 L36 58 Z" fill="rgba(255,240,160,0.3)" stroke="#e8c840" stroke-width="0.6"/>
+          <path d="M165 52 L152 48 L150 55 L164 58 Z" fill="rgba(255,100,80,0.2)" stroke="#ff6644" stroke-width="0.6"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 홈 패널 -->
+    <div id="panel-home" class="app-area">
+      <!-- 맵 배경 -->
+      <div class="map-bg">
+        <div class="map-blocks" id="map-blocks"></div>
+      </div>
+
+      <!-- 내비 오버레이 -->
+      <div class="nav-ov">
+        <div class="nav-dest">목적지</div>
+        <div class="nav-main">서울특별시 종로구</div>
+        <div class="nav-badges">
+          <div class="nav-badge">11분</div>
+          <div class="nav-badge">3.3km</div>
+        </div>
+      </div>
+
+      <!-- 위젯 컬럼 -->
+      <div class="widget-col">
+
+        <!-- 상단 미디어 컨트롤 바 -->
+        <div class="media-topbar">
+          <button class="mtb-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12l10-8v16zM5 4h2v16H5z"/></svg></button>
+          <button class="mtb-btn" onclick="togglePlay()">
+            <svg viewBox="0 0 24 24" fill="currentColor" id="play-icon"><path d="M8 5v14l11-7z"/></svg>
+          </button>
+          <button class="mtb-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 4l10 8-10 8V4zm14 0h2v16h-2z"/></svg></button>
+          <div class="mtb-title">Life Goes On — 방탄소년단</div>
+          <div class="mtb-dots">
+            <div class="mtb-dot on" onclick="scrollToCard(0)"></div>
+            <div class="mtb-dot" onclick="scrollToCard(1)"></div>
+            <div class="mtb-dot" onclick="scrollToCard(2)"></div>
+            <div class="mtb-dot" onclick="scrollToCard(3)"></div>
+          </div>
+        </div>
+
+        <!-- 스크롤 카드 영역 -->
+        <div class="widget-scroll" id="widget-scroll" onscroll="updateDots()">
+
+          <!-- 카드 1: 내비게이션 검색 -->
+          <div class="wcard" id="wcard-0">
+            <div class="wcard-hdr">
+              <span class="wcard-hdr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></span>
+              <span class="wcard-hdr-title">내비게이션</span>
+            </div>
+            <div class="nav-search-bar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <span>목적지 검색</span>
+            </div>
+            <div class="nav-quick-btns">
+              <div class="nav-qb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/></svg>
+                <span>집</span>
+              </div>
+              <div class="nav-qb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                <span>직장</span>
+              </div>
+              <div class="nav-qb">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><circle cx="12" cy="11" r="3"/></svg>
+                <span>즐겨찾기</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 2: 단축키 -->
+          <div class="wcard" id="wcard-1">
+            <div class="wcard-hdr">
+              <span class="wcard-hdr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg></span>
+              <span class="wcard-hdr-title">단축키</span>
+            </div>
+            <div class="shortcut-grid">
+              <div class="sc-key-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>
+                <span> 단축키 추가</span>
+              </div>
+              <div class="sc-key" onclick="showSettings()">
+                <span class="sc-num">1</span>
+                <span class="sc-label">경고 설정</span>
+              </div>
+              <div class="sc-key" onclick="showSettings();selSub('profile')">
+                <span class="sc-num">2</span>
+                <span class="sc-label">프로필</span>
+              </div>
+              <div class="sc-key" onclick="showSettings();selTop('seat')">
+                <span class="sc-num">3</span>
+                <span class="sc-label">시트</span>
+              </div>
+              <div class="sc-key empty">
+                <span class="sc-add">+</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 3: 블루투스 -->
+          <div class="wcard" id="wcard-2">
+            <div class="wcard-hdr">
+              <span class="wcard-hdr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg></span>
+              <span class="wcard-hdr-title">블루투스</span>
+            </div>
+            <div class="bt-widget">
+              <div class="bt-phone-ico">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+              </div>
+              <div class="bt-info">
+                <div class="bt-status">블루투스 비활성화됨</div>
+                <div class="bt-btn" onclick="toggleBT(this)">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11L12 23V1l5.5 5.5-11 11"/></svg>
+                  <span>블루투스 활성화</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 카드 4: 현재 위치 & 날씨 -->
+          <div class="wcard" id="wcard-3">
+            <div class="wcard-hdr">
+              <span class="wcard-hdr-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z"/><path d="M12 8v4l3 3"/></svg></span>
+              <span class="wcard-hdr-title">현재 위치 · 날씨</span>
+            </div>
+            <div class="weather-widget">
+              <div class="ww-loc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>⚠ 현재 위치 · 서울특별시 종로구</span>
+              </div>
+              <div class="ww-main">
+                <div class="ww-temp">19<span class="ww-deg">°C</span></div>
+                <div class="ww-icon">☀️</div>
+                <div class="ww-detail">
+                  <div class="ww-row">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2"/></svg>
+                    <span>강수 2%</span>
+                  </div>
+                  <div class="ww-aqi">
+                    <span style="font-size:9px;color:#2a4060;">AQI</span>
+                    <div class="ww-aqi-bar"></div>
+                    <span>좋음</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /widget-scroll -->
+
+        <!-- 스크롤 인디케이터 -->
+        <div class="scroll-hint" id="scroll-hint">
+          <div class="sh-dot on"></div>
+          <div class="sh-dot"></div>
+          <div class="sh-dot"></div>
+          <div class="sh-dot"></div>
+        </div>
+
+      </div><!-- /widget-col -->
+    </div><!-- /panel-home -->
+
+    <!-- 설정 패널 (Driving View + 앱영역 구조 유지) -->
+    <div id="panel-settings" style="display:none;flex:1;overflow:hidden;">
+      <!-- Driving View (설정화면에서도 유지) -->
+      <div class="driving-view">
+        <span class="dv-label">Driving View</span>
+        <div class="dv-car">
+          <svg viewBox="0 0 200 100" fill="none" stroke="currentColor" stroke-width="1.5" color="#1259C3">
+            <path d="M30 65 Q28 55 35 45 L55 30 Q70 22 100 20 Q130 22 145 30 L165 45 Q172 55 170 65 L170 72 Q150 75 100 75 Q50 75 30 72 Z" stroke="#1259C3" fill="rgba(18,89,195,0.06)"/>
+            <path d="M55 45 Q70 28 100 25 Q130 28 145 45" stroke="#4080e8" stroke-width="0.8" fill="none"/>
+            <circle cx="58" cy="72" r="11" stroke="#1259C3" fill="rgba(18,89,195,0.08)"/>
+            <circle cx="58" cy="72" r="5" stroke="#4080e8" fill="rgba(18,89,195,0.12)"/>
+            <circle cx="142" cy="72" r="11" stroke="#1259C3" fill="rgba(18,89,195,0.08)"/>
+            <circle cx="142" cy="72" r="5" stroke="#4080e8" fill="rgba(18,89,195,0.12)"/>
+          </svg>
+        </div>
+      </div>
+      <!-- 설정 앱 영역 -->
+      <div style="display:flex;flex:1;overflow:hidden;">
+      <!-- 1레벨 대분류 메뉴 -->
+      <div class="menu-col">
+        <div class="menu-back" onclick="showHome()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          홈으로
+        </div>
+        <div class="menu-hdr">차량 설정</div>
+
+        <div class="mi" id="mi-quicklist" onclick="selTop('quicklist')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10" width="18" height="3" rx="1"/><rect x="3" y="16" width="18" height="3" rx="1"/></svg>
+          퀵리스트
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-assist" onclick="selTop('assist')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          어시스트
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-park" onclick="selTop('park')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>
+          주차
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-drive" onclick="selTop('drive')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm0 4v4l3 3"/></svg>
+          주행
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-charge" onclick="selTop('charge')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          충전
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi-divider"></div>
+
+        <!-- 경고 설정 — 서브메뉴 포함 -->
+        <div class="mi on-parent" id="mi-warning-top" onclick="toggleWarningMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+          경고 설정
+          <span class="mi-arrow" id="warning-arrow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></span>
+        </div>
+        
+        <div class="sub-menu open" id="warning-sub">
+          <div class="smi on" id="smi-warning" onclick="selSub('warning')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            경고 알림
+          </div>
+          <div class="smi" id="smi-voice" onclick="selSub('voice')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
+            음성
+          </div>
+          <div class="smi" id="smi-detect" onclick="selSub('detect')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            감지 설정
+          </div>
+          <div class="smi" id="smi-display" onclick="selSub('display')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            디스플레이
+          </div>
+          <div class="smi" id="smi-profile" onclick="selSub('profile')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            사용자 프로필
+          </div>
+        </div>
+
+        <div class="mi-divider"></div>
+        <div class="mi" id="mi-light" onclick="selTop('light')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          라이트
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-seat" onclick="selTop('seat')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2v14a2 2 0 002 2h8M6 8h8"/></svg>
+          시트
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-door" onclick="selTop('door')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h18v18H3zM14 12h1"/></svg>
+          도어
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+        <div class="mi" id="mi-display" onclick="selTop('display')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          디스플레이
+          <span class="mi-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></span>
+        </div>
+      </div>
+
+      <!-- 2레벨 디테일 -->
+      <div class="detail-col" id="detail-col">
+        <!-- 기본: 경고 알림 -->
+      </div>
+      </div><!-- /설정 앱 영역 -->
+    </div><!-- /panel-settings -->
+
+  </div><!-- /main-body -->
+
+  <!-- GNB 하단 바 — Pleos Figma 스펙 -->
+  <div class="gnb">
+
+    <!-- ① 좌측: 차량설정 + 운전석 공조 -->
+    <div class="gnb-left">
+      <!-- 차량 설정 아이콘 -->
+      <div class="gnb-ctrl" title="차량 설정" onclick="showSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M5 11l1.5-4.5h11L19 11M3 11h18M3 14h1a1 1 0 001-1v-1H3m18 2h-1a1 1 0 01-1-1v-1h2M7 17a1 1 0 100-2 1 1 0 000 2zm10 0a1 1 0 100-2 1 1 0 000 2z"/>
+        </svg>
+      </div>
+
+      <!-- 운전석 공조 온도 -->
+      <div class="gnb-temp-group">
+        <button class="gnb-temp-btn" onclick="adjTemp(-0.5)" title="온도 내리기">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="1"/></svg>
+        </button>
+        <div class="gnb-temp-display" onclick="toggleAC()">
+          <div class="gnb-temp-num">
+            <span class="gnb-temp-big" id="temp-l-big">25</span>
+            <span class="gnb-temp-dec" id="temp-l-dec">.0</span>
+          </div>
+          <div class="gnb-temp-label">
+            <!-- 눈꽃 아이콘 -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M4.93 4.93l14.14 14.14M2 12h20M4.93 19.07L19.07 4.93"/>
+            </svg>
+            AUTO
+          </div>
+        </div>
+        <button class="gnb-temp-btn" onclick="adjTemp(0.5)" title="온도 올리기">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+        </button>
+      </div>
+
+      <!-- 성에제거 -->
+      <div class="gnb-ctrl" title="성에제거">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M3 8h18M3 12h18M3 16h18M7 5l2 3M12 4v4M17 5l-2 3M7 19l2-3M12 20v-4M17 19l-2-3"/>
+        </svg>
+      </div>
+
+      <!-- 운전석 팬 -->
+      <div class="gnb-ctrl" title="팬 제어">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0"/>
+          <path d="M12 2C10 4 9 7 10 10c-3-1-6-1-8 1 1 2 4 4 7 4-2 2-3 5-2 8 2 0 5-2 6-5 1 3 4 5 6 5 1-3 0-6-2-8 3 0 6-2 7-4-2-2-5-2-8-1 1-3 0-6-2-8z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ② 중앙: 앱 아이콘 그룹 -->
+    <div class="gnb-center">
+      <!-- 앱 그룹 1: 내비 / 음악 / 앱마켓 / 전화 / 라이브러리 -->
+      <div class="gnb-apps-group">
+        <!-- 내비 -->
+        <div class="gnb-app-btn" onclick="showHome()" title="내비게이션">
+          <div class="gnb-app-icon" style="background:linear-gradient(180deg,#5A46FA 0%,#4833EE 100%);">
+            <svg viewBox="0 0 24 24" fill="white" stroke="none"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+          </div>
+          <div class="gnb-app-dot"></div>
+        </div>
+        <!-- 음악 -->
+        <div class="gnb-app-btn" title="음악">
+          <div class="gnb-app-icon" style="background:linear-gradient(180deg,#A151F1 0%,#7B18DF 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+        </div>
+        <!-- 앱마켓 -->
+        <div class="gnb-app-btn" title="앱마켓">
+          <div class="gnb-app-icon" style="background:linear-gradient(180deg,#50C0FF 0%,#5364FA 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+          </div>
+        </div>
+        <!-- 전화 -->
+        <div class="gnb-app-btn" title="전화">
+          <div class="gnb-app-icon" style="background:linear-gradient(180deg,#30CF72 0%,#29B557 100%);">
+            <svg viewBox="0 0 24 24" fill="white" stroke="none"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.4 11.4 0 003.58.57 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.57 3.57a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg>
+          </div>
+        </div>
+        <!-- 앱 라이브러리 -->
+        <div class="gnb-lib-btn" title="앱 라이브러리">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 세로 구분선 -->
+      <div class="gnb-divider"></div>
+
+      <!-- 앱 그룹 2: Gleo AI / 라디오 -->
+      <div class="gnb-apps-group">
+        <!-- Gleo AI -->
+        <div class="gnb-app-btn" title="Gleo AI">
+          <div class="gnb-app-icon" style="background:#596BFF;">
+            <svg viewBox="0 0 24 24" fill="white" stroke="none"><path d="M12 2a7 7 0 017 7c0 2.5-1.3 4.7-3.3 6L12 22l-3.7-7A7 7 0 0112 2zm0 4a3 3 0 100 6 3 3 0 000-6z"/></svg>
+          </div>
+        </div>
+        <!-- 라디오 -->
+        <div class="gnb-app-btn" title="라디오">
+          <div class="gnb-app-icon" style="background:linear-gradient(180deg,#E751FF 0%,#C911E7 100%);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="8" opacity="0.4"/><circle cx="12" cy="12" r="5" opacity="0.6"/><circle cx="12" cy="12" r="2.5" fill="white" stroke="none"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ③ 우측: 조수석 공조 -->
+    <div class="gnb-right">
+      <!-- 조수석 팬 -->
+      <div class="gnb-ctrl" title="조수석 팬">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.35">
+          <path d="M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0"/>
+          <path d="M12 2C10 4 9 7 10 10c-3-1-6-1-8 1 1 2 4 4 7 4-2 2-3 5-2 8 2 0 5-2 6-5 1 3 4 5 6 5 1-3 0-6-2-8 3 0 6-2 7-4-2-2-5-2-8-1 1-3 0-6-2-8z"/>
+        </svg>
+      </div>
+
+      <!-- 조수석 시트 -->
+      <div class="gnb-ctrl" title="조수석 시트">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.35">
+          <path d="M6 20h4M8 20V9a2 2 0 012-2h4a2 2 0 012 2v3M8 9V4m8 8h2a2 2 0 012 2v4a2 2 0 01-2 2h-2"/>
+        </svg>
+      </div>
+
+      <!-- 조수석 온도 -->
+      <div class="gnb-temp-group">
+        <button class="gnb-temp-btn" onclick="adjTemp(-0.5,'r')" title="조수석 온도 내리기">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="11" width="14" height="2" rx="1"/></svg>
+        </button>
+        <div class="gnb-temp-display">
+          <div class="gnb-temp-num">
+            <span class="gnb-temp-big" id="temp-r-big">25</span>
+            <span class="gnb-temp-dec" id="temp-r-dec">.0</span>
+          </div>
+          <div class="gnb-temp-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M4.93 4.93l14.14 14.14M2 12h20M4.93 19.07L19.07 4.93"/>
+            </svg>
+            AUTO
+          </div>
+        </div>
+        <button class="gnb-temp-btn" onclick="adjTemp(0.5,'r')" title="조수석 온도 올리기">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
+        </button>
+      </div>
+
+      <!-- 차량 설정 우측 -->
+      <div class="gnb-ctrl" title="조수석 설정" onclick="showSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.35">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /screen-main -->
+
+<div class="toast" id="toast">설정이 저장되었습니다</div>
+<div id="alert-popup" style="
+  position:fixed; top:20px; right:20px; z-index:9999;
+  background:#1a1a2e; border:2px solid #ef4444; border-radius:12px;
+  padding:14px 20px; display:flex; align-items:center; gap:10px;
+  opacity:0; transform:translateY(-10px);
+  transition:opacity 0.3s, transform 0.3s; pointer-events:none;">
+  <svg id="alert-popup-icon" width="24" height="24" viewBox="0 0 24 24"
+       fill="none" stroke="currentColor" stroke-width="2" color="#ef4444">
+    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+  <span id="alert-popup-text" style="color:white;font-size:13px;font-weight:600;">경고</span>
+</div><!-- /screen -->
+
+<script>
+/* ── 상태 ── */
+let curName = '김승우', curColor = '#3d8eff';
+let tempL = 25.0, tempR = 25.0;
+let fanIdx = 1; const fanLevels = ['OFF','LOW','MID','HIGH','MAX'];
+let acOn = true, playing = true;
+
+/* ── 부팅 ── */
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('bbar').style.width = '100%', 80);
+  setTimeout(() => {
+    const b = document.getElementById('screen-boot');
+    b.classList.add('out');
+    setTimeout(() => {
+      b.style.display = 'none';
+      const ps = document.getElementById('screen-profile');
+      ps.classList.add('show');
+      setTimeout(() => ps.classList.add('in'), 40);
+    }, 720);
+  }, 2600);
+
+  // 시계
+  const clk = document.getElementById('clock');
+  const tick = () => {
+    const n = new Date();
+    clk.textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  };
+  tick(); setInterval(tick, 1000);
+
+  // 맵 블록 생성
+  genMapBlocks();
+  initDragScroll();
+  bindSettingsMenuClicks();
+  bindHomeButtons();
+});
+
+/* ── 맵 블록 ── */
+function genMapBlocks() {
+  const c = document.getElementById('map-blocks');
+  const sizes = [[40,30],[60,45],[35,50],[80,40],[50,60],[30,35],[70,30],[45,55],[55,40]];
+  const positions = [
+    [10,15],[20,55],[35,20],[50,10],[55,50],[70,25],[75,60],[85,15],[15,70]
+  ];
+  positions.forEach(([l,t], i) => {
+    const [w,h] = sizes[i % sizes.length];
+    const d = document.createElement('div');
+    d.className = 'blk';
+    d.style.cssText = `left:${l}%;top:${t}%;width:${w}px;height:${h}px;opacity:${0.4+Math.random()*0.4}`;
+    c.appendChild(d);
+  });
+}
+
+/* ── 데스크톱 드래그 스크롤 ── */
+function initDragScroll() {
+  const menus = document.querySelectorAll('.menu-col, .widget-scroll');
+  menus.forEach((menu) => {
+    if (!menu || menu.dataset.dragBound === '1') return;
+    menu.dataset.dragBound = '1';
+
+    let dragging = false;
+    let didDrag = false;
+    let suppressClick = false;
+    let startY = 0;
+    let startScrollTop = 0;
+    let pointerId = null;
+    const DRAG_THRESHOLD = 10; // 클릭 오작동 방지용 여유값
+
+    menu.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.menu-back, .mi, .smi, button, input, .opt-btn, .toggle, .ctrl-btn, .detail-tab, .sc-key')) return;
+      dragging = true;
+      didDrag = false;
+      suppressClick = false;
+      pointerId = e.pointerId;
+      startY = e.clientY;
+      startScrollTop = menu.scrollTop;
+      menu.style.cursor = 'grabbing';
+      try { menu.setPointerCapture(pointerId); } catch (_) {}
+    });
+
+    menu.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const deltaY = e.clientY - startY;
+
+      // 아주 작은 손떨림은 클릭으로 인정하고, 일정 거리 이상 움직였을 때만 드래그로 처리
+      if (Math.abs(deltaY) > DRAG_THRESHOLD) {
+        didDrag = true;
+        e.preventDefault();
+        menu.scrollTop = startScrollTop - deltaY;
+      }
+    });
+
+    const stopDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      menu.style.cursor = '';
+      suppressClick = didDrag;
+      if (pointerId !== null) {
+        try {
+          if (menu.hasPointerCapture(pointerId)) menu.releasePointerCapture(pointerId);
+        } catch (_) {}
+      }
+      pointerId = null;
+    };
+
+    menu.addEventListener('pointerup', stopDrag);
+    menu.addEventListener('pointercancel', stopDrag);
+    menu.addEventListener('pointerleave', stopDrag);
+
+    // 실제 드래그였을 때만 클릭 방지. 그냥 클릭은 하위 메뉴 선택이 정상 실행됨.
+    menu.addEventListener('click', (e) => {
+      if (!suppressClick) return;
+      e.preventDefault();
+      e.stopPropagation();
+      suppressClick = false;
+      didDrag = false;
+    }, true);
+  });
+}
+
+/* ── 프로필 ── */
+function pickP(el, name, color) {
+  document.querySelectorAll('.pc').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  curName = name; curColor = color;
+  document.getElementById('btn-go').classList.add('on');
+}
+function goMain() { _enter(curName, curColor); }
+function goGuest() { _enter('게스트', '#304560'); }
+function _enter(name, color) {
+  const ps = document.getElementById('screen-profile');
+  ps.style.cssText = 'opacity:0;transition:opacity 0.35s';
+  setTimeout(() => {
+    ps.classList.remove('show','in'); ps.style.cssText = '';
+    document.getElementById('pb-name').textContent = name;
+    document.getElementById('pb-dot').style.background = color;
+    // DMS 서브텍스트 업데이트
+    const profileDms = document.getElementById('cur-profile-dms');
+    if (profileDms) profileDms.textContent = name + ' · 중간 말투 · 여성 TTS';
+    const ms = document.getElementById('screen-main');
+    ms.classList.add('show');
+    setTimeout(() => ms.classList.add('in'), 30);
+    showHome(); selMenu('warning');
+  }, 380);
+}
+function backToProfile() {
+  const ms = document.getElementById('screen-main');
+  ms.style.cssText = 'opacity:0;transition:opacity 0.35s;display:flex;flex-direction:column;flex:1;';
+  setTimeout(() => {
+    ms.classList.remove('show','in'); ms.style.cssText = '';
+    document.querySelectorAll('.pc').forEach(c => c.classList.remove('sel'));
+    document.getElementById('btn-go').classList.remove('on');
+    const ps = document.getElementById('screen-profile');
+    ps.classList.add('show');
+    setTimeout(() => ps.classList.add('in'), 40);
+  }, 380);
+}
+
+/* ── 홈 / 설정 ── */
+function showHome() {
+  const home = document.getElementById('panel-home');
+  const settings = document.getElementById('panel-settings');
+  if (!home || !settings) return;
+  settings.classList.remove('show');
+  settings.style.display = 'none';
+  home.style.display = 'flex';
+}
+function showSettings() {
+  bindSettingsMenuClicks();
+  const home = document.getElementById('panel-home');
+  const settings = document.getElementById('panel-settings');
+  if (!home || !settings) return;
+  home.style.display = 'none';
+  settings.style.display = 'flex';
+  settings.classList.add('show');
+  selSub('warning');
+}
+
+function bindHomeButtons() {
+  document.querySelectorAll('.menu-back').forEach((btn) => {
+    if (btn.dataset.homeBound === '1') return;
+    btn.dataset.homeBound = '1';
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showHome();
+    });
+  });
+}
+
+/* ── 설정 메뉴 ── */
+const warningState = {
+  tone: '중간',
+  length: '중문',
+  gender: 'Kore',        // Gemini TTS voice name
+  model: 'gemini-2.5-flash-preview-tts',
+  rate: 180,
+  volume: 75,
+  escalation: true,
+  positive: true,
+  displayAlert: true,
+  delay: 3,
+  threshold: 2,
+  // 사용자 프로파일
+  age:        '30대',
+  driveStyle: 'Normal',
+  experience: '일반',
+};
+
+const subPanels = {
+  warning: () => `
+    <div class="warning-settings-page">
+      <div class="detail-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        경고 알림
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">말투</div>
+        <div class="setting-row">
+          <div class="opt-btn ${warningState.tone==='부드러운'?'selected':''}" onclick="selectWarningOpt('tone','부드러운',this)">부드러운</div>
+          <div class="opt-btn ${warningState.tone==='중간'?'selected':''}" onclick="selectWarningOpt('tone','중간',this)">중간</div>
+          <div class="opt-btn ${warningState.tone==='단호'?'selected':''}" onclick="selectWarningOpt('tone','단호',this)">단호</div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">경고 길이</div>
+        <div class="setting-row">
+          <div class="opt-btn ${warningState.length==='단문'?'selected':''}" onclick="selectWarningOpt('length','단문',this)">단문</div>
+          <div class="opt-btn ${warningState.length==='중문'?'selected':''}" onclick="selectWarningOpt('length','중문',this)">중문</div>
+          <div class="opt-btn ${warningState.length==='장문'?'selected':''}" onclick="selectWarningOpt('length','장문',this)">장문</div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="toggle-row">
+          <span class="toggle-label">단계적 경고 강화</span>
+          <button class="toggle ${warningState.escalation?'on':''}" onclick="toggleWarningOpt('escalation',this)"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">칭찬 피드백</span>
+          <button class="toggle ${warningState.positive?'on':''}" onclick="toggleWarningOpt('positive',this)"></button>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">칭찬 발화 딜레이 (초)</div>
+        <div class="slider-wrap">
+          <span class="range-end">1s</span>
+          <input type="range" min="1" max="6" step="1" value="${warningState.delay}" oninput="updateWarningSlider('delay',this)">
+          <span class="slider-val" id="val-delay">${warningState.delay}s</span>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveAndSync()">저장하기</button>
+    </div>`,
+  voice: () => `
+    <div class="warning-settings-page">
+      <div class="detail-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+        음성
+      </div>
+
+      <!-- 보이스 선택 6개 -->
+      <div class="setting-group">
+        <div class="setting-label">보이스 선택</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+          ${[
+            {n:'Kore',    d:'단호한',    tip:'경고에 가장 적합한 권위있는 톤'},
+            {n:'Puck',    d:'경쾌한',    tip:'칭찬 발화에 잘 맞는 밝은 톤'},
+            {n:'Charon',  d:'정보전달형', tip:'차분하고 명확한 안내 스타일'},
+            {n:'Aoede',   d:'산뜻한',    tip:'부드러운 1단계 경고에 적합'},
+            {n:'Achird',  d:'친근한',    tip:'거부감 없는 자연스러운 대화체'},
+            {n:'Sulafat', d:'따뜻한',    tip:'고령 운전자 친화적인 포근한 톤'},
+          ].map(v => `
+            <div class="opt-btn ${warningState.gender===v.n?'selected':''}"
+                 onclick="selectWarningVoice('${v.n}',this)"
+                 title="${v.tip}"
+                 style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px;">
+              <span style="font-size:12px;font-weight:600;">${v.n}</span>
+              <span style="font-size:9px;opacity:0.6;">${v.d}</span>
+            </div>`).join('')}
+        </div>
+        <div style="font-size:10px;color:#888;margin-top:4px;" id="voice-tip-pleos">
+          ${({'Kore':'경고에 가장 적합한 권위있는 톤','Puck':'칭찬 발화에 잘 맞는 밝은 톤','Charon':'차분하고 명확한 안내 스타일','Aoede':'부드러운 1단계 경고에 적합','Achird':'거부감 없는 자연스러운 대화체','Sulafat':'고령 운전자 친화적인 포근한 톤'})[warningState.gender]||''}
+        </div>
+      </div>
+
+      <!-- 말하기 속도 (유지) -->
+      <div class="setting-group">
+        <div class="setting-label">말하기 속도</div>
+        <div class="slider-wrap">
+          <span class="range-end">느림</span>
+          <input type="range" min="120" max="240" step="10" value="${warningState.rate}" oninput="updateWarningSlider('rate',this)">
+          <span class="slider-val" id="val-rate">${warningState.rate}</span>
+        </div>
+      </div>
+
+      <!-- 볼륨 (유지) -->
+      <div class="setting-group">
+        <div class="setting-label">볼륨</div>
+        <div class="slider-wrap">
+          <span class="range-end">0</span>
+          <input type="range" min="0" max="100" step="5" value="${warningState.volume}" oninput="updateWarningSlider('volume',this)">
+          <span class="slider-val" id="val-volume">${warningState.volume}</span>
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveAndSync();updateVoiceSnippetPleos()">저장하기</button>
+    </div>`,
+  detect: () => `
+    <div class="warning-settings-page">
+      <div class="detail-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        감지 설정
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">감지 임계값 (초)</div>
+        <div class="slider-wrap">
+          <span class="range-end">1s</span>
+          <input type="range" min="1" max="5" step="0.5" value="${warningState.threshold}" oninput="updateWarningSlider('threshold',this)">
+          <span class="slider-val" id="val-threshold">${warningState.threshold}s</span>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="toggle-row">
+          <span class="toggle-label">휴대폰 감지 활성화</span>
+          <button class="toggle ${warningState.displayAlert?'on':''}" onclick="toggleWarningOpt('displayAlert',this)">
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">로그 기록</span>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveAndSync()">저장하기</button>
+    </div>`,
+  display: () => `
+    <div class="warning-settings-page">
+      <div class="detail-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        디스플레이
+      </div>
+      <div class="setting-group">
+        <div class="toggle-row">
+          <span class="toggle-label">경고 단계 시각 표시</span>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">칭찬 대기 카운트다운</span>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">옵션 현황 오버레이</span>
+          <button class="toggle" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveAndSync()">저장하기</button>
+    </div>`,
+  profile: () => `
+    <div class="warning-settings-page">
+      <div class="detail-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        사용자 프로필
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">연령</div>
+        <div class="setting-row">
+          <div class="opt-btn ${warningState.age==='20대'?'selected':''}" onclick="selectProfileOpt('age','20대',this)">20대</div>
+          <div class="opt-btn ${warningState.age==='30대'?'selected':''}" onclick="selectProfileOpt('age','30대',this)">30대</div>
+          <div class="opt-btn ${warningState.age==='40대'?'selected':''}" onclick="selectProfileOpt('age','40대',this)">40대</div>
+          <div class="opt-btn ${warningState.age==='50대+'?'selected':''}" onclick="selectProfileOpt('age','50대+',this)">50대+</div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">운전 스타일</div>
+        <div class="setting-row">
+          <div class="opt-btn ${warningState.driveStyle==='Active'?'selected':''}" onclick="selectProfileOpt('driveStyle','Active',this)">Active</div>
+          <div class="opt-btn ${warningState.driveStyle==='Normal'?'selected':''}" onclick="selectProfileOpt('driveStyle','Normal',this)">Normal</div>
+          <div class="opt-btn ${warningState.driveStyle==='Comfort'?'selected':''}" onclick="selectProfileOpt('driveStyle','Comfort',this)">Comfort</div>
+        </div>
+      </div>
+      <div class="setting-group">
+        <div class="setting-label">운전 경험</div>
+        <div class="setting-row">
+          <div class="opt-btn ${warningState.experience==='입문'?'selected':''}" onclick="selectProfileOpt('experience','입문',this)">입문</div>
+          <div class="opt-btn ${warningState.experience==='일반'?'selected':''}" onclick="selectProfileOpt('experience','일반',this)">일반</div>
+          <div class="opt-btn ${warningState.experience==='숙련'?'selected':''}" onclick="selectProfileOpt('experience','숙련',this)">숙련</div>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveAndSync()">저장하기</button>
+    </div>`
+};
+
+// 차량 시각화 패널 (라이트, 시트, 도어 등 비경고 메뉴)
+function carVizPanel(title, tabs, ctrlGroups) {
+  const tabHtml = tabs.map((t,i) =>
+    `<div class="detail-tab ${i===0?'on':''}" onclick="switchTab(this)">${t}</div>`
+  ).join('');
+  const ctrlHtml = ctrlGroups.map(g =>
+    `<div class="ctrl-group">${g.map(b =>
+      `<button class="ctrl-btn ${b.on?'on':''}" onclick="this.closest('.ctrl-group').querySelectorAll('.ctrl-btn').forEach(x=>x.classList.remove('on'));this.classList.add('on')">${b.label}</button>`
+    ).join('')}</div>`
+  ).join('');
+  return `
+    <div class="detail-header">${tabHtml}</div>
+    <div class="car-viz">
+      <div class="car-svg-wrap">
+        <svg viewBox="0 0 200 100" fill="none" stroke="currentColor" stroke-width="1.2" color="#3d8eff">
+          <!-- 차체 -->
+          <path d="M30 65 Q28 55 35 45 L55 30 Q70 22 100 20 Q130 22 145 30 L165 45 Q172 55 170 65 L170 72 Q150 75 100 75 Q50 75 30 72 Z" stroke="#3d8eff" fill="rgba(61,142,255,0.06)"/>
+          <!-- 루프라인 -->
+          <path d="M55 45 Q70 28 100 25 Q130 28 145 45" stroke="#5aaeff" stroke-width="0.8" fill="none"/>
+          <!-- 앞유리 -->
+          <path d="M55 45 L65 30 Q80 22 100 21 Q120 22 135 30 L145 45" fill="rgba(100,180,255,0.08)" stroke="#3d8eff" stroke-width="0.6"/>
+          <!-- 앞바퀴 -->
+          <circle cx="58" cy="72" r="11" stroke="#3d8eff" fill="rgba(61,142,255,0.1)"/>
+          <circle cx="58" cy="72" r="5" stroke="#5aaeff" fill="rgba(61,142,255,0.15)"/>
+          <!-- 뒷바퀴 -->
+          <circle cx="142" cy="72" r="11" stroke="#3d8eff" fill="rgba(61,142,255,0.1)"/>
+          <circle cx="142" cy="72" r="5" stroke="#5aaeff" fill="rgba(61,142,255,0.15)"/>
+          <!-- 헤드라이트 -->
+          <path d="M35 52 L48 48 L50 55 L36 58 Z" fill="rgba(255,240,180,0.2)" stroke="#ffee99" stroke-width="0.6"/>
+          <!-- 테일라이트 -->
+          <path d="M165 52 L152 48 L150 55 L164 58 Z" fill="rgba(255,80,80,0.2)" stroke="#ff6666" stroke-width="0.6"/>
+        </svg>
+      </div>
+      <div class="ctrl-overlay">${ctrlHtml}</div>
+    </div>`;
+}
+
+const topPanels = {
+  quicklist: carVizPanel('퀵리스트', ['퀵리스트 설정'], [[{label:'편집',on:false},{label:'저장',on:true}]]),
+  assist:    carVizPanel('어시스트', ['주행 보조','안전'], [[{label:'OFF',on:false},{label:'AUTO',on:true},{label:'ON',on:false}]]),
+  park:      carVizPanel('주차', ['주차 보조','후방 카메라'], [[{label:'OFF',on:false},{label:'ON',on:true}]]),
+  drive:     carVizPanel('주행', ['주행 모드','서스펜션'], [[{label:'ECO',on:false},{label:'NORMAL',on:true},{label:'SPORT',on:false}]]),
+  charge:    carVizPanel('충전', ['충전 현황','예약 충전'], [[{label:'즉시',on:true},{label:'예약',on:false}]]),
+  light:     carVizPanel('라이트', ['외부 조명','실내 조명'], [
+    [{label:'OFF',on:false},{label:'AUTO',on:true},{label:'ON',on:false}],
+    [{label:'주간등',on:false},{label:'전조등',on:true}]
+  ]),
+  seat:      carVizPanel('시트', ['운전석','동반석'], [[{label:'표준',on:true},{label:'스포츠',on:false},{label:'편안',on:false}]]),
+  door:      carVizPanel('도어', ['잠금 설정','윈도우'], [[{label:'속도 잠금',on:true},{label:'수동',on:false}]]),
+  display:   carVizPanel('디스플레이', ['밝기','테마'], [[{label:'자동',on:true},{label:'수동',on:false}]])
+};
+
+let warningSubOpen = true;
+
+// 메뉴 클릭 보강: inline onclick이 막히는 환경에서도 메뉴가 반드시 전환되도록 처리
+function bindSettingsMenuClicks() {
+  const menu = document.querySelector('.menu-col');
+  if (!menu || menu.dataset.bound === '1') return;
+  menu.dataset.bound = '1';
+  menu.addEventListener('click', (e) => {
+    const subItem = e.target.closest('.smi');
+    if (subItem) {
+      e.preventDefault();
+      e.stopPropagation();
+      const key = subItem.id.replace('smi-', '');
+      selSub(key);
+      return;
+    }
+    const topItem = e.target.closest('.mi');
+    if (topItem) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (topItem.id === 'mi-warning-top') {
+        toggleWarningMenu();
+        return;
+      }
+      const key = topItem.id.replace('mi-', '');
+      selTop(key);
+    }
+  });
+}
+ 
+function toggleWarningMenu() {
+  warningSubOpen = !warningSubOpen;
+  const sub = document.getElementById('warning-sub');
+  const arrow = document.getElementById('warning-arrow');
+  sub.classList.toggle('open', warningSubOpen);
+  arrow.style.transform = warningSubOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
+  arrow.style.transition = 'transform 0.2s';
+  if (warningSubOpen) selSub('warning');
+}
+ 
+
+function selTop(key) {
+  // 모든 mi 비활성화
+  document.querySelectorAll('.mi').forEach(e => { e.classList.remove('on'); e.classList.remove('on-parent'); });
+  document.querySelectorAll('.smi').forEach(e => e.classList.remove('on'));
+  document.getElementById('mi-' + key)?.classList.add('on');
+  document.getElementById('detail-col').innerHTML = topPanels[key] || '';
+}
+
+function selSub(key) {
+  // setWarningMenuOpen(true);
+  // 서브메뉴 아이템 활성화
+  document.querySelectorAll('.smi').forEach(e => e.classList.remove('on'));
+  document.getElementById('smi-' + key)?.classList.add('on');
+  // 상위 메뉴도 on-parent 표시
+  document.querySelectorAll('.mi').forEach(e => { e.classList.remove('on'); e.classList.remove('on-parent'); });
+  document.getElementById('mi-warning-top')?.classList.add('on-parent');
+  document.getElementById('detail-col').innerHTML = subPanels[key]?.() || '';
+}
+
+function selMenu(key) { selSub(key); }  // 호환성 유지
+
+function selectWarningVoice(voiceName, el) {
+  warningState.gender = voiceName;
+  // 그리드 내 모든 opt-btn 선택 해제 후 현재 선택
+  el.closest('div[style*="grid"]').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  // 툴팁 업데이트
+  const tips = {
+    'Kore':'경고에 가장 적합한 권위있는 톤',
+    'Puck':'칭찬 발화에 잘 맞는 밝은 톤',
+    'Charon':'차분하고 명확한 안내 스타일',
+    'Aoede':'부드러운 1단계 경고에 적합',
+    'Achird':'거부감 없는 자연스러운 대화체',
+    'Sulafat':'고령 운전자 친화적인 포근한 톤',
+  };
+  const tip = document.getElementById('voice-tip-pleos');
+  if (tip) tip.textContent = tips[voiceName] || '';
+  updateVoiceSnippetPleos();
+}
+
+function updateVoiceSnippetPleos() {
+  const snip = document.getElementById('voice-snippet-pleos');
+  if (!snip) return;
+  snip.innerHTML =
+    `<span style="color:#1259C3;font-weight:600;font-family:sans-serif;">Python 연동</span><br>` +
+    `model=<span style="color:#e65100;">"gemini-2.5-flash-preview-tts"</span>,<br>` +
+    `voice_name=<span style="color:#e65100;">"${warningState.gender}"</span>`;
+}
+
+function selectWarningOpt(stateKey, val, el) {
+  warningState[stateKey] = val;
+  el.closest('.setting-row').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectWarningSingle(el) {
+  el.closest('.setting-row').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectProfileOpt(key, val, el) {
+  warningState[key] = val;
+  el.closest('.setting-row').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleWarningOpt(key, el) {
+  warningState[key] = !warningState[key];
+  el.classList.toggle('on');
+}
+
+function updateWarningSlider(key, el) {
+  const value = parseFloat(el.value);
+  warningState[key] = value;
+  const suffix = (key === 'delay' || key === 'threshold') ? 's' : '';
+  const displayEl = document.getElementById('val-' + key);
+  if (!displayEl) return;
+  displayEl.textContent = (key === 'threshold' ? value.toFixed(1) : Math.round(value)) + suffix;
+}
+
+function switchTab(el) {
+  el.closest('.detail-header').querySelectorAll('.detail-tab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+}
+function obS(el) {
+  el.closest('.sr').querySelectorAll('.ob').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+/* ── Flask 연동: 설정 저장 & 전송 ── */
+const FLASK_URL = 'http://127.0.0.1:5050';
+
+function saveAndSync() {
+  showToast();
+
+  const payload = {
+    tone:       warningState.tone,
+    length:     warningState.length,
+    voice:      warningState.gender,
+    volume:     warningState.volume,
+    escalation: warningState.escalation,
+    positive:   warningState.positive,
+    delay:      warningState.delay,
+    threshold:  warningState.threshold,
+    rate:       warningState.rate,
+    age:        warningState.age,
+    driveStyle: warningState.driveStyle,
+    experience: warningState.experience,
+  };
+
+  fetch(FLASK_URL + '/set-options', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  .then(r => r.json())
+  .then(data => {
+    console.log('✅ Python 동기화 완료:', data);
+    showSyncBadge(true);
+  })
+  .catch(err => {
+    console.warn('⚠️ Python 서버 미연결 (로컬 저장만):', err);
+    showSyncBadge(false);
+  });
+}
+
+function showSyncBadge(success) {
+  const badge = document.getElementById('sync-badge');
+  if (!badge) return;
+  badge.textContent = success ? '✅ Python 동기화됨' : '💾 로컬 저장됨';
+  badge.style.background = success ? '#1259C3' : '#888';
+  badge.style.opacity = '1';
+  setTimeout(() => { badge.style.opacity = '0'; }, 2500);
+}
+
+// 설정화면 진입 시 현재 Python OPTIONS 값 불러오기
+function syncFromPython() {
+  fetch(FLASK_URL + '/get-options')
+  .then(r => r.json())
+  .then(data => {
+    if (data.tone)       warningState.tone       = data.tone;
+    if (data.length)     warningState.length      = data.length;
+    if (data.voice)      warningState.gender      = data.voice;
+    if (data.volume)     warningState.volume      = data.volume;
+    if (data.escalation !== undefined) warningState.escalation = data.escalation;
+    if (data.positive   !== undefined) warningState.positive   = data.positive;
+    if (data.delay)      warningState.delay       = data.delay;
+    if (data.threshold)  warningState.threshold   = data.threshold;
+    if (data.rate)       warningState.rate        = data.rate;
+    if (data.age)        warningState.age         = data.age;
+    if (data.driveStyle) warningState.driveStyle  = data.driveStyle;
+    if (data.experience) warningState.experience  = data.experience;
+    console.log('📥 Python OPTIONS 불러옴:', data);
+    // 설정 패널 새로고침
+    selSub('warning');
+  })
+  .catch(() => console.log('ℹ️ Python 서버 없음, 로컬 값 사용'));
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* ── 공조 ── */
+function adjTemp(delta, side) {
+  if (!side || side === 'l') {
+    tempL = Math.max(16, Math.min(30, tempL + delta));
+    const big = Math.floor(tempL);
+    const dec = '.' + Math.round((tempL - big) * 10);
+    document.getElementById('temp-l-big').textContent = big;
+    document.getElementById('temp-l-dec').textContent = dec;
+  }
+  if (side === 'r') {
+    tempR = Math.max(16, Math.min(30, tempR + delta));
+    const big = Math.floor(tempR);
+    const dec = '.' + Math.round((tempR - big) * 10);
+    document.getElementById('temp-r-big').textContent = big;
+    document.getElementById('temp-r-dec').textContent = dec;
+  }
+}
+function adjFan(delta) {
+  fanIdx = Math.max(0, Math.min(fanLevels.length - 1, fanIdx + delta));
+  document.getElementById('fan-lv').textContent = fanLevels[fanIdx];
+}
+function toggleAC() {
+  acOn = !acOn;
+  const btn = document.getElementById('ac-btn');
+  btn.classList.toggle('off', !acOn);
+  btn.textContent = acOn ? 'A/C' : 'A/C';
+}
+
+/* ── 위젯 스크롤 인디케이터 ── */
+function updateDots() {
+  const sc = document.getElementById('widget-scroll');
+  if (!sc) return;
+  const cards = sc.querySelectorAll('.wcard');
+  const dots = document.querySelectorAll('.sh-dot');
+  const mtbDots = document.querySelectorAll('.mtb-dot');
+  let active = 0;
+  cards.forEach((c, i) => {
+    const rect = c.getBoundingClientRect();
+    const scRect = sc.getBoundingClientRect();
+    if (rect.top >= scRect.top - 10) active = i;
+  });
+  // reverse: find topmost visible
+  active = 0;
+  for (let i = 0; i < cards.length; i++) {
+    const rect = cards[i].getBoundingClientRect();
+    const scRect = sc.getBoundingClientRect();
+    if (rect.top <= scRect.top + 30) active = i;
+  }
+  dots.forEach((d,i) => d.classList.toggle('on', i === active));
+  mtbDots.forEach((d,i) => d.classList.toggle('on', i === active));
+}
+
+function scrollToCard(idx) {
+  const sc = document.getElementById('widget-scroll');
+  const card = document.getElementById('wcard-' + idx);
+  if (sc && card) sc.scrollTo({ top: card.offsetTop - 8, behavior: 'smooth' });
+}
+
+/* ── 블루투스 토글 ── */
+function toggleBT(btnEl) {
+  const widget = btnEl.closest('.wcard');
+  if (!widget) return;
+  const status = widget.querySelector('.bt-status');
+  const btnSpan = btnEl.querySelector('span');
+  if (!status || !btnSpan) return;
+  const isOff = status.textContent.includes('비활성화');
+  if (isOff) {
+    status.textContent = '연결 중...';
+    btnSpan.textContent = '블루투스 비활성화';
+    setTimeout(() => { status.textContent = 'iPhone (김승우) 연결됨'; }, 1200);
+  } else {
+    status.textContent = '블루투스 비활성화됨';
+    btnSpan.textContent = '블루투스 활성화';
+  }
+}
+
+/* ── 재생 ── */
+function togglePlay() {
+  playing = !playing;
+  const pi = document.getElementById('play-icon');
+  const hi = document.getElementById('hvac-play-icon');
+  const pb = document.getElementById('play-btn');
+  const ico = playing ? '<path d="M8 5v14l11-7z"/>' : '<path d="M6 19h4V5H6zm8-14v14h4V5z"/>';
+  if (pi) pi.innerHTML = ico;
+  if (hi) hi.innerHTML = ico;
+  if (pb) pb.classList.toggle('play', playing);
+}
+
+/* ── 경고 팝업 (SSE) ── */
+const WARNING_COLORS = {1:'#f59e0b', 2:'#ef4444', 3:'#7c3aed'};
+
+function showWarningPopup(type, level) {
+  if (!warningState.displayAlert) return;
+  const popup = document.getElementById('alert-popup');
+  const icon  = document.getElementById('alert-popup-icon');
+  const text  = document.getElementById('alert-popup-text');
+  if (!popup) return;
+
+  if (type === 'warn') {
+    popup.style.borderColor = WARNING_COLORS[level] || '#ef4444';
+    icon.style.color        = WARNING_COLORS[level] || '#ef4444';
+    text.textContent        = `경고 ${level}단계`;
+    popup.style.background  = '#1a1a2e';
+  } else {
+    popup.style.borderColor = '#22c55e';
+    icon.style.color        = '#22c55e';
+    text.textContent        = '✓ 개선됨';
+    popup.style.background  = '#1a2e1a';
+  }
+  popup.classList.add('show');
+  setTimeout(() => popup.classList.remove('show'), 3000);
+}
+
+// SSE 연결
+function connectAlertStream() {
+  const es = new EventSource(FLASK_URL + '/alert-stream');
+  es.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    showWarningPopup(data.type, data.level);
+  };
+  es.onerror = () => setTimeout(connectAlertStream, 3000); // 끊기면 재연결
+}
+connectAlertStream();
+
+</script>
+</body>
+</html>
