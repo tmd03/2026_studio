@@ -186,6 +186,8 @@ GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 
 ### Launch System
 
+**Start the Python server before opening the HTML interface.**
+
 ```bash
 python3 2026_1_studio_v3.py
 ```
@@ -203,7 +205,7 @@ python3 2026_1_studio_v3.py --no-options
 ```text
 .
 ├── 2026_1_studio_v3.py
-├── studio_v2(0608).html
+├── index.html 
 ├── efficientdet_lite0.tflite
 ├── requirements.txt
 ├── .env
