@@ -168,30 +168,13 @@ through a browser-based interface connected directly to the Python backend.
 ### AI & Computer Vision
 
 - MediaPipe Object Detection
-- Gemini 2.5 Flash
-- Gemini TTS
+- Gemini 3.1 Flash
+- Gemini 2.5 flash TTS
 
-### Audio
-
-- PyAudio
-- macOS Speech API (Fallback)
 
 ---
 
-## ⚙️ Installation
-
-### Clone Repository
-
-```bash
-git clone https://github.com/your-username/driver-monitoring-system.git
-cd driver-monitoring-system
-```
-
-### Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
+## 🚀 Run
 
 ### Create Environment Variables
 
@@ -200,10 +183,6 @@ Create a `.env` file:
 ```env
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 ```
-
----
-
-## 🚀 Run
 
 ### Launch System
 
@@ -224,7 +203,7 @@ python3 2026_1_studio_v3.py --no-options
 ```text
 .
 ├── 2026_1_studio_v3.py
-├── studio_v2.html
+├── studio_v2(0608).html
 ├── efficientdet_lite0.tflite
 ├── requirements.txt
 ├── .env
